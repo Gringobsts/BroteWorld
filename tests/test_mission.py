@@ -34,12 +34,12 @@ def test_coin_sensor_pickup_positive_and_cannot_collect_twice():
     x, y = place_coin_east(world)
     assert world.observe()[27 + 5] == 1
     assert World.restore(world.state()).coin_at(x, y)
-    assert world.step(1) >= SIGNALS["moneda"]
+    assert world.step(1) == SIGNALS["moneda"]
     assert world.coins == 1 and world.last_signal == "moneda"
     assert world.last_reward_components["moneda"] == SIGNALS["moneda"]
     assert not world.coin_at(x, y)
     world.step(3)
-    world.step(1)
+    assert world.step(1) == 0
     assert world.coins == 1
 
 

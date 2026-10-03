@@ -11,12 +11,14 @@ import pytest
 import torch
 
 from brain.world.clock import TurnClock
-from brain.world.environment import OBS_SIZE, World
+from brain.world.environment import COIN_GOAL, GRASS, OBS_SIZE, SIGNALS, World
 from brain.world.learning import Learner, benchmark
 from brain.world.server import Session, make_handler
 
 
-@pytest.mark.parametrize("rate,seconds,expected", [(1, 1, 1), (10000, 1, 10000), (0.25, 4, 1)])
+@pytest.mark.parametrize(
+    "rate,seconds,expected", [(1, 1, 1), (10000, 1, 10000), (100000, 1, 100000), (0.25, 4, 1)]
+)
 def test_turn_speed_has_no_skipped_actions(rate, seconds, expected):
     clock = TurnClock()
     due = clock.budget(seconds, rate)
@@ -52,6 +54,30 @@ def test_collision_and_rest_consume_a_turn():
     assert all(0 <= value <= 1 for value in world.observe())
 
 
+@pytest.mark.parametrize("previous_visits", [0, 25])
+def test_walking_without_coins_is_neutral_even_when_exploring(previous_visits):
+    world = World()
+    world.coins = COIN_GOAL  # Isolate movement from the separate coin reward.
+    destination = world.x + 1, world.y
+    key = world.key(*destination)
+    world.overrides[key] = GRASS
+    world.visits[key] = previous_visits
+    assert world.step(1) == 0
+    assert world.last_reward_components == {"avance": 0}
+    assert (world.x, world.y) == destination
+    assert world.visits[key] == previous_visits + 1
+    assert world.moves == world.turn == world.steps == 1
+
+
+def test_walking_still_receives_the_mission_deadline_penalty():
+    world = World()
+    world.coins = COIN_GOAL
+    world.overrides[world.key(world.x + 1, world.y)] = GRASS
+    world.turn = world.next_penalty_turn - 1
+    assert world.step(1) == SIGNALS["plazo_sin_cumplir"]
+    assert world.last_reward_components == {"avance": 0, "plazo_sin_cumplir": -25}
+
+
 def test_one_action_per_turn_and_training_continues(tmp_path):
     session = Session(tmp_path / "world.pt")
     session.control({"action": "running", "value": False})
@@ -72,10 +98,10 @@ def test_one_action_per_turn_and_training_continues(tmp_path):
 
 def test_speed_changes_do_not_change_world_or_train(tmp_path):
     session = Session(tmp_path / "world.pt")
-    for speed in (0.25, 1, 10000):
+    for speed in (0.25, 1, 10000, 100000):
         state = session.control({"action": "speed", "value": speed})
         assert state["speed"] == speed and state["clock"]["turn"] == 0
-    for value in (0, -1, 10001, True, "1000", float("nan")):
+    for value in (0, -1, 100001, True, "1000", float("nan")):
         with pytest.raises(ValueError):
             session.control({"action": "speed", "value": value})
 
@@ -149,12 +175,12 @@ def test_http_state_and_controls(tmp_path):
     try:
         with urllib.request.urlopen(url + "/api/state") as response:
             assert json.load(response)["clock"]["actions_per_agent"] == 1
-        payload = json.dumps({"action": "speed", "value": 10000}).encode()
+        payload = json.dumps({"action": "speed", "value": 100000}).encode()
         request = urllib.request.Request(
             url + "/api/control", data=payload, headers={"Content-Type": "application/json"}
         )
         with urllib.request.urlopen(request) as response:
-            assert json.load(response)["speed"] == 10000
+            assert json.load(response)["speed"] == 100000
         request.add_header("Origin", "https://unrelated.example")
         with pytest.raises(urllib.error.HTTPError) as error:
             urllib.request.urlopen(request)

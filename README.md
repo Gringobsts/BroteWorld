@@ -18,12 +18,12 @@ Abrí [el mundo local](http://127.0.0.1:8765). Podés pausar, avanzar un turno, 
 - La cámara de 24 × 18 bloques sigue a Brote. Su visión propia es de **3 × 3**.
 - Hay dieciséis acciones: caminar en cuatro direcciones, esperar, talar en cuatro direcciones, fabricar hacha, fabricar pico, picar en cuatro direcciones y recoger una piedra del suelo.
 - Cualquier intento consume un turno, incluso fallar. Cada turno equivale a un segundo simulado.
-- La velocidad solicitada va de 0,01 a 10.000 turnos por segundo real. Se muestra la velocidad efectiva: no se saltan acciones ni entrenamiento para aparentar velocidad.
+- La velocidad solicitada va de 0,01 a 100.000 turnos por segundo real. Se muestra la velocidad efectiva: no se saltan acciones ni entrenamiento para aparentar velocidad.
 - Los árboles blandos requieren tres golpes sin herramienta y dan tres de madera blanda. Los duros requieren hacha, tres golpes y dan tres de madera dura. Ambos bloquean el paso; sus tocones son transitables.
 - Cada árbol talado vuelve a crecer **100.000 turnos después de caer**. Si Brote ocupa su casilla, espera a que la deje libre.
 
 ```bash
-uv run brain-world --speed 10000
+uv run brain-world --speed 100000
 ```
 
 ## Recursos y herramientas
@@ -43,10 +43,10 @@ La misión requiere **10.000 monedas, 100.000 de madera blanda, 100.000 de piedr
 
 | Suceso | Recompensa |
 | --- | ---: |
-| Movimiento válido | +0,02 más hasta +0,05 por exploración |
+| Movimiento válido, incluso a una casilla nueva | 0 |
 | Chocar con un bloque no transitable | −0,5 |
 | Esperar | −0,06 |
-| Golpear un árbol | +0,4 |
+| Golpear un árbol o roca grande con cuota pendiente | +0,4 |
 | Último golpe: árbol talado o roca extraída, 3 de su recurso | +2,4 |
 | Recoger una piedra suelta en la casilla actual | +0,8 |
 | Fabricar una herramienta que falta | +4 |
@@ -56,11 +56,17 @@ La misión requiere **10.000 monedas, 100.000 de madera blanda, 100.000 de piedr
 | Completar las cuatro metas | +100 adicional, una vez por misión |
 | Cada 50.000 turnos sin completar las cuatro metas | −25 adicional |
 
+Caminar por sí solo no da premio, ni por dar un paso válido ni por explorar una casilla nueva. Si recoge una moneda al moverse, cobra únicamente el premio de esa moneda. Chocar conserva su señal negativa.
+
+**Los premios por recursos solo se dan mientras falte su cuota en la misión actual.** Cuando completa madera blanda, madera dura o piedra, los golpes, la extracción y la recogida de ese recurso pasan a dar **0**. Puede seguir recolectándolo y conservarlo en el inventario. La acción que alcanza la cuota todavía recibe su premio completo. Gastar materiales en herramientas no reactiva una cuota ya cumplida. Las acciones inválidas mantienen su señal negativa; el plazo y el premio por completar la misión se suman por separado.
+
 Al completar las cuatro metas, cobra el premio y empieza automáticamente otra misión con las mismas cuatro metas, en el mismo turno. El progreso vuelve a cero, las monedas reciben nuevas posiciones y el plazo vuelve a 50.000 turnos. El inventario acumulado, los árboles, el mundo y la misma mente se conservan; los recursos anteriores no completan la nueva misión. Se cuenta la recolección bruta de cada recurso: gastarlo en herramientas no reduce el progreso; los materiales gastados se conservan como contadores para este cálculo. La interfaz muestra la misión actual y cuántas completó.
+
+Al empezar cada misión se reactivan los premios de los recursos. Al actualizar una partida con las recompensas anteriores, primero se aprenden las experiencias pendientes y después se activa esta regla; no se reinician los pesos, el optimizador ni el inventario.
 
 El plazo empieza al asignar cada misión, no al iniciar el programa. Guardar, reiniciar y cambiar de terreno conservan el inventario, el progreso y la próxima penalización. Si completa las cuatro metas justo en el límite, recibe el premio sin penalización. Las señales de un mismo turno se suman y se muestran por separado en el estado. No se agrega un castigo general por cada turno con la misión pendiente.
 
-Las recompensas son un diseño experimental, no garantizan que aprenda la estrategia deseada. Con un descuento de 0,95, el agente relaciona sobre todo consecuencias cercanas: una penalización a 50.000 turnos no basta para enseñarle planificación a esa escala. Los premios por avances proporcionan señales inmediatas. Sigue recibiendo experiencia después de completar la misión; no se reinicia ni congela la mente.
+Las recompensas son un diseño experimental, no garantizan que aprenda la estrategia deseada. Con un descuento de 0,95, el agente relaciona sobre todo consecuencias cercanas: una penalización a 50.000 turnos no basta para enseñarle planificación a esa escala. Los premios por recursos pendientes y herramientas proporcionan señales inmediatas. Sigue recibiendo experiencia después de completar la misión; no se reinicia ni congela la mente.
 
 ## La misma mente, aprendizaje continuo
 

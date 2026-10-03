@@ -11,8 +11,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from brain.world.clock import TurnClock
-from brain.world.environment import ACTION_NAMES, World
+from brain.world.environment import ACTION_NAMES, REWARD_VERSION, World
 from brain.world.learning import Learner, LearnerConfig
+
+MAX_SPEED = 100_000
 
 
 class Session:
@@ -22,6 +24,10 @@ class Session:
             self.learner, self.world = Learner.load(self.checkpoint, backup_legacy=True)
         else:
             self.learner, self.world = Learner(LearnerConfig(seed=seed)), World(seed)
+        if self.world.reward_version < REWARD_VERSION:
+            # Finish pending experience before switching incentives; keep the same mind.
+            self.learner.update(self.world.observe())
+            self.world.reward_version = REWARD_VERSION
         self.lock = threading.RLock()
         self.stop = threading.Event()
         self.wake = threading.Event()
@@ -141,6 +147,7 @@ class Session:
                         "target": self.world.last_target,
                         "signal": self.world.last_signal,
                         "reward_components": self.world.last_reward_components,
+                        "reward_reduced": self.world.last_reward_reduced,
                     },
                     "metrics": self.world.metrics(),
                     "goal": self.world.goal_state(),
@@ -191,7 +198,7 @@ class Session:
                     isinstance(speed, bool)
                     or not isinstance(speed, (float, int))
                     or not math.isfinite(speed)
-                    or not 0.01 <= speed <= 10000
+                    or not 0.01 <= speed <= MAX_SPEED
                 ):
                     raise ValueError("Velocidad inválida")
                 self.speed = speed
@@ -331,12 +338,14 @@ def main():
     parser = argparse.ArgumentParser(description="Brain · Un pequeño mundo que aprende")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--seed", type=int, default=17)
-    parser.add_argument("--speed", type=float, default=4, help="Turnos/s reales: 0.01 a 10000")
+    parser.add_argument(
+        "--speed", type=float, default=4, help=f"Turnos/s solicitados: 0.01 a {MAX_SPEED}"
+    )
     parser.add_argument("--checkpoint", type=Path, default=Path("runs/world/live.pt"))
     parser.add_argument("--paused", action="store_true", help="Iniciar sin avanzar turnos")
     args = parser.parse_args()
-    if not math.isfinite(args.speed) or not 0.01 <= args.speed <= 10000:
-        parser.error("La velocidad debe estar entre 0.01 y 10000 turnos/s")
+    if not math.isfinite(args.speed) or not 0.01 <= args.speed <= MAX_SPEED:
+        parser.error(f"La velocidad debe estar entre 0.01 y {MAX_SPEED} turnos/s")
     session = Session(args.checkpoint, args.seed, args.speed)
     session.running = not args.paused
     server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(session))

@@ -85,7 +85,7 @@ function render(time){
   sprite(ctx,px,py,2,state.running&&fraction<1?Math.floor(time/110)%2:0,agent.action<4?agent.action:agent.action<9&&agent.action>=5?agent.action-5:agent.action>=11&&agent.action<15?agent.action-11:2);
   if(agent.target){
     const tx=(agent.target[0]-state.world.viewport.x)*tile+16,ty=(agent.target[1]-state.world.viewport.y)*tile+16;
-    ctx.strokeStyle=agent.reward>0?'#ffe9a0':'#b75b4b';ctx.lineWidth=2;ctx.strokeRect(tx-12,ty-12,24,24);
+    ctx.strokeStyle=agent.reward>0?'#ffe9a0':agent.reward<0?'#b75b4b':'#bac3b2';ctx.lineWidth=2;ctx.strokeRect(tx-12,ty-12,24,24);
     const chopping=agent.action>=5&&agent.action<9,mining=agent.action>=11&&agent.action<15;
     if(chopping&&agent.inventory.axe){rect(ctx,px+9,py-7,3,16,'#85633e');rect(ctx,px+9,py-10,10,6,'#dae0d8');}
     else if(mining&&agent.inventory.pickaxe){rect(ctx,px+9,py-7,3,16,'#85633e');rect(ctx,px+4,py-10,15,3,'#bfcbd0');rect(ctx,px+3,py-7,3,4,'#bfcbd0');rect(ctx,px+18,py-7,3,4,'#bfcbd0');}
@@ -125,10 +125,10 @@ function setState(next){
   $('buffer').textContent=next.learning.buffer+' / '+next.learning.rollout;
   $('buffer-bar').style.width=(100*next.learning.buffer/next.learning.rollout)+'%';
   $('last-action').textContent=next.agent.action_name.charAt(0).toUpperCase()+next.agent.action_name.slice(1);
-  const signals={inicio:'Explorando con los sentidos de alrededor.',avance:'Paso válido: una pequeña recompensa.',obstaculo:'Movimiento bloqueado: señal negativa.',espera:'Esperar consume un turno.',sin_arbol:'No hay un árbol para talar ahí.',golpe:'Golpe válido: el árbol perdió resistencia.',arbol_talado:'Árbol blando talado. Ganó 3 de madera blanda.',moneda:'Moneda recogida: recompensa positiva.',objetivo_completo:'¡Misión completada! Premio recibido y una nueva misión en marcha.',plazo_sin_cumplir:'Pasaron 50.000 turnos sin completar las cuatro metas.',falta_hacha:'El árbol duro necesita un hacha.',falta_pico:'La roca grande necesita un pico.',sin_roca:'No hay una roca grande en esa dirección.',materiales_insuficientes:'Faltan materiales para fabricar la herramienta.',herramienta_existente:'Ya tiene esa herramienta.',hacha_fabricada:'Fabricó un hacha. Puede talar árboles duros.',pico_fabricado:'Fabricó un pico. Puede extraer rocas grandes.',arbol_duro_talado:'Ganó 3 de madera dura.',golpe_roca:'La roca perdió resistencia.',roca_extraida:'Roca extraída. Ganó 3 de piedra.',piedra_suelta:'Recogió una piedra de su casilla.',sin_piedra_suelta:'No hay una piedra suelta en su casilla.'};
-  $('action').textContent=signals[next.agent.signal]||next.agent.signal;
-  $('reward').textContent=(next.agent.reward>=0?'+':'')+next.agent.reward.toFixed(2);
-  $('reward').style.color=next.agent.reward<0?'#ab6551':'#657c49';
+  const signals={inicio:'Explorando con los sentidos de alrededor.',avance:'Paso válido: sin premio por caminar.',obstaculo:'Movimiento bloqueado: señal negativa.',espera:'Esperar consume un turno.',sin_arbol:'No hay un árbol para talar ahí.',golpe:'Golpe válido: el árbol perdió resistencia.',arbol_talado:'Árbol blando talado. Ganó 3 de madera blanda.',moneda:'Moneda recogida: recompensa positiva.',objetivo_completo:'¡Misión completada! Premio recibido y una nueva misión en marcha.',plazo_sin_cumplir:'Pasaron 50.000 turnos sin completar las cuatro metas.',falta_hacha:'El árbol duro necesita un hacha.',falta_pico:'La roca grande necesita un pico.',sin_roca:'No hay una roca grande en esa dirección.',materiales_insuficientes:'Faltan materiales para fabricar la herramienta.',herramienta_existente:'Ya tiene esa herramienta.',hacha_fabricada:'Fabricó un hacha. Puede talar árboles duros.',pico_fabricado:'Fabricó un pico. Puede extraer rocas grandes.',arbol_duro_talado:'Ganó 3 de madera dura.',golpe_roca:'La roca perdió resistencia.',roca_extraida:'Roca extraída. Ganó 3 de piedra.',piedra_suelta:'Recogió una piedra de su casilla.',sin_piedra_suelta:'No hay una piedra suelta en su casilla.'};
+  $('action').textContent=(signals[next.agent.signal]||next.agent.signal)+(next.agent.reward_reduced?' Cuota cumplida: este recurso ya no da premio.':'');
+  $('reward').textContent=(next.agent.reward>0?'+':'')+next.agent.reward.toFixed(2);
+  $('reward').style.color=next.agent.reward<0?'#ab6551':next.agent.reward>0?'#657c49':'#7c8276';
   $('reward').title=Object.entries(next.agent.reward_components).map(([k,v])=>k+': '+v.toFixed(2)).join(' · ');
   $('coins').textContent=nf.format(next.goal.coins)+' / '+nf.format(next.goal.coin_target);
   $('wood').textContent=nf.format(next.goal.wood)+' / '+nf.format(next.goal.wood_target);

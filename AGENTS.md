@@ -4,7 +4,7 @@ El objetivo actual es un mundo de píxeles con agentes que aprendan continuament
 
 - Una acción por agente por turno. Intentos fallidos y espera también consumen la acción.
 - Un turno equivale a un segundo simulado. Separar reloj, velocidad real y renderizado.
-- La tasa solicitada llega a 10.000 turnos/s. Mostrar la efectiva; no saltar acciones, turnos ni aprendizaje para aparentar velocidad.
+- La tasa solicitada llega a 100.000 turnos/s. Mostrar la efectiva; no saltar acciones, turnos ni aprendizaje para aparentar velocidad.
 - Aprendizaje continuo por defecto mientras el servidor esté encendido. Pausar el mundo pausa su experiencia; reanudar conserva la mente y el optimizador.
 - No introducir modelos preentrenados ni reglas que elijan acciones por el agente. Documentar física, sensores y recompensa diseñados.
 - Conservar pesos, optimizador, aleatoriedad y experiencias pendientes al reiniciar.
@@ -22,7 +22,9 @@ El objetivo actual es un mundo de píxeles con agentes que aprendan continuament
 - Tala: árboles blandos a mano; duros con hacha. Tres golpes, tres de su madera, rebrote a 100.000 turnos; no crecer sobre el agente. Rocas grandes bloquean: tres golpes de pico, tres piedras, sin regeneración. Piedras pequeñas transitables: moverse y recoger en la casilla actual son acciones separadas, nunca recogida automática.
 - Misión persistente: 10.000 monedas y 100.000 de cada recurso (madera blanda, piedra, madera dura). Premio máximo una vez por misión al completar las cuatro metas; renovar automáticamente en el mismo turno con progreso nuevo, nuevas monedas y plazo de 50.000 turnos. Conservar inventario acumulado y mente. Penalización cada 50.000 turnos mientras falte alguna.
 - Cambiar el terreno conserva inventario y reloj de misión. El entrenamiento continúa después de completarla.
+- Los recursos solo dan premio mientras falte su cuota en la misión actual. Golpes, extracción y recogida dan cero después de completarla; conservar la recolección física y las penalizaciones por acciones inválidas. El último recurso necesario sí se premia. Gastar materiales no reactiva cuotas; la siguiente misión sí. Al cambiar esta regla, aprender primero la experiencia pendiente con sus recompensas originales, sin reiniciar la mente.
 - No añadir castigo general por turno sin una instrucción posterior del usuario. La pregunta sobre su conveniencia no autorizó ese cambio.
+- Caminar da cero premio, también al explorar una casilla nueva. Conservar premios por monedas recogidas al moverse y señales negativas por choques. Al actualizar las recompensas, terminar las experiencias pendientes antes de aplicar la regla nueva.
 
 - Hacha y pico cuestan cada uno 2 de madera blanda y 3 piedras. Fabricar gasta un turno. Herramientas sin desgaste; duplicados fallan sin consumo. El progreso de misión cuenta recolección bruta, sin disminuir al fabricar.
 - Guardados v2 conservan toda la madera como blanda y su hacha inicial. Ampliar las 39/9 dimensiones a 72/16 conservando pesos y momentos y aprendiendo las experiencias pendientes con las reglas anteriores.

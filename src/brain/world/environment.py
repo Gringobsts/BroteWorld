@@ -34,13 +34,15 @@ TOOL_WOOD_COST, TOOL_STONE_COST = 2, 3
 CHUNK_SIZE, MAX_CACHED_CHUNKS = 16, 64
 COIN_GOAL, WOOD_GOAL, STONE_GOAL, HARD_WOOD_GOAL = 10_000, 100_000, 100_000, 100_000
 PENALTY_INTERVAL = 50_000
+COMPLETED_RESOURCE_REWARD_SCALE = 0.0
+REWARD_VERSION = 3
 SIGNALS = {
     "obstaculo": -0.5,
     "sin_arbol": -0.35,
     "espera": -0.06,
     "golpe": 0.4,
     "arbol_talado": 2.4,
-    "avance": 0.02,
+    "avance": 0.0,
     "moneda": 3.0,
     "objetivo_completo": 100.0,
     "plazo_sin_cumplir": -25.0,
@@ -76,6 +78,8 @@ class World:
         self.last_action, self.last_reward, self.last_target = 4, 0.0, None
         self.last_signal = "inicio"
         self.last_reward_components = {}
+        self.last_reward_reduced = False
+        self.reward_version = REWARD_VERSION
         self.rules_version = 3
         self.hard_wood = self.stone = 0
         self.wood_spent = self.stone_spent = 0
@@ -238,6 +242,9 @@ class World:
             "penalties": self.goal_penalties,
             "penalty": SIGNALS["plazo_sin_cumplir"],
             "completion_bonus": SIGNALS["objetivo_completo"],
+            "completed_resource_reward_scale": COMPLETED_RESOURCE_REWARD_SCALE
+            if self.reward_version >= 2
+            else 1.0,
         }
 
     def observe(self):
@@ -307,6 +314,13 @@ class World:
             raise ValueError("Acción desconocida")
         self.turn += 1
         self._regrow()
+        needed = {
+            "soft_wood": self.wood + self.wood_spent - self.goal_wood_start < WOOD_GOAL,
+            "hard_wood": self.hard_wood - self.goal_hard_wood_start < HARD_WOOD_GOAL,
+            "stone": self.stone + self.stone_spent - self.goal_stone_start < STONE_GOAL,
+        }
+        resource = None
+        self.last_reward_reduced = False
         moved = collision = hit = felled = False
         self.last_target = None
         if action < 4:
@@ -318,9 +332,12 @@ class World:
                 self.y += dy
                 self.moves += 1
                 self.last_signal = "avance"
-                reward = SIGNALS["avance"] + 0.05 / math.sqrt(
-                    1 + self.visits.get(self.key(self.x, self.y), 0)
-                )
+                reward = SIGNALS["avance"]
+                if self.reward_version < 3:
+                    # Historical rules remain reproducible for saved experiments.
+                    reward = 0.02 + 0.05 / math.sqrt(
+                        1 + self.visits.get(self.key(self.x, self.y), 0)
+                    )
             else:
                 self.collisions += 1
                 self.last_signal = "obstaculo"
@@ -339,6 +356,7 @@ class World:
                 self.last_signal = "falta_hacha"
                 reward = SIGNALS[self.last_signal]
             elif health:
+                resource = "hard_wood" if self.tile_at(x, y) == HARD_TREE else "soft_wood"
                 hit = True
                 self.chop_hits += 1
                 key = self.key(x, y)
@@ -388,6 +406,7 @@ class World:
                 self.last_signal = "falta_pico"
             else:
                 self.mine_hits += 1
+                resource = "stone"
                 key = self.key(x, y)
                 if health > 1:
                     self.rock_damaged[key] = health - 1
@@ -402,12 +421,18 @@ class World:
         else:
             self.last_target = [self.x, self.y]
             if self.stone_at(self.x, self.y):
+                resource = "stone"
                 self.stone += 1
                 self.stone_taken[self.key(self.x, self.y)] = True
                 self.last_signal = "piedra_suelta"
             else:
                 self.last_signal = "sin_piedra_suelta"
             reward = SIGNALS[self.last_signal]
+        # Judge need BEFORE the action: the hit/pickup that reaches a goal earns its full reward.
+        # Every physical action is still available, including gathering completed resources.
+        if resource and not needed[resource] and self.reward_version >= 2:
+            reward *= COMPLETED_RESOURCE_REWARD_SCALE
+            self.last_reward_reduced = True
         key = self.key(self.x, self.y)
         self.last_reward_components = {self.last_signal: reward}
         if moved and self.coin_at(self.x, self.y):
@@ -536,6 +561,8 @@ class World:
             # The previous world exposed a starter axe. Keep it, plus all accrued wood as soft wood.
             world.axe = 1
             world.rules_version = 3
+        if "reward_version" not in state:
+            world.reward_version = 1  # Preserve old rewards until the server explicitly upgrades.
         heapq.heapify(world.regrowth_queue)
         return world
 
