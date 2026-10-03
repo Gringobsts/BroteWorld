@@ -1,0 +1,12 @@
+seed: 17
+embedding_size: 48
+hidden_size: 128
+layers: 1
+learning_rate: 0.003
+batch_size: 32
+steps: 1200
+eval_every: 200
+validation_limit: 96
+max_new_bytes: 80
+threads: 2
+

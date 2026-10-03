@@ -1,0 +1,100 @@
+{
+  "version": "brain-v1",
+  "provenance": "synthetic:brain-v1; author=Codex; review=code+golden-tests; human-review=pending",
+  "files": {
+    "test_composition.jsonl": {
+      "sha256": "e180fbb29cd2c2d37b8dda368e50ee112a8feae4ddf5dcb750111671a71eb491",
+      "count": 240,
+      "skills": {
+        "nombre": 60,
+        "color": 60,
+        "tamaño": 60,
+        "concordancia": 60
+      },
+      "semantic_groups": 60
+    },
+    "test_copy.jsonl": {
+      "sha256": "c5131489cea01dc8c2fb4f1e7de9fee6b92b447545bda0c786b84e582d1ef19c",
+      "count": 3,
+      "skills": {
+        "copia": 3
+      },
+      "semantic_groups": 3
+    },
+    "test_scenes.jsonl": {
+      "sha256": "9fd91f9df5730271a2749ffdb5ed3c549bd8068ae553c06199aa47b1c568de90",
+      "count": 320,
+      "skills": {
+        "nombre": 80,
+        "color": 80,
+        "tamaño": 80,
+        "concordancia": 80
+      },
+      "semantic_groups": 80
+    },
+    "test_templates.jsonl": {
+      "sha256": "e1dfc117ce6ae6258c254d65ab731131e198f685f02bb1b08d1bdcaba09fa5b1",
+      "count": 320,
+      "skills": {
+        "nombre": 80,
+        "color": 80,
+        "tamaño": 80,
+        "concordancia": 80
+      },
+      "semantic_groups": 80
+    },
+    "train.jsonl": {
+      "sha256": "03e124c352106aa7bccf1c01551674137c8d50d853dc18113ee34c9a8ffd5492",
+      "count": 1962,
+      "skills": {
+        "nombre": 480,
+        "color": 480,
+        "tamaño": 480,
+        "concordancia": 480,
+        "copia": 42
+      },
+      "semantic_groups": 101
+    },
+    "validation_composition.jsonl": {
+      "sha256": "6af5582f24c1ea71b413c2f2fb976272d64e17eee06cc974fc3db89cc9fb4738",
+      "count": 240,
+      "skills": {
+        "nombre": 60,
+        "color": 60,
+        "tamaño": 60,
+        "concordancia": 60
+      },
+      "semantic_groups": 60
+    },
+    "validation_copy.jsonl": {
+      "sha256": "1f5a894cc823aabc7341dd7f7cf5325c38117f610fdac02989eb7ae589280e44",
+      "count": 3,
+      "skills": {
+        "copia": 3
+      },
+      "semantic_groups": 3
+    },
+    "validation_scenes.jsonl": {
+      "sha256": "ecd30e5d58d6c56ab36bdcd9151a0dd6e28845a4d9a49a45e59ba1bf7a1b3bf7",
+      "count": 320,
+      "skills": {
+        "nombre": 80,
+        "color": 80,
+        "tamaño": 80,
+        "concordancia": 80
+      },
+      "semantic_groups": 80
+    },
+    "validation_templates.jsonl": {
+      "sha256": "3b2ab71a893be7cb6b6cbf5a41ede691d85360d34600262b43fa1f1125f1a344",
+      "count": 320,
+      "skills": {
+        "nombre": 80,
+        "color": 80,
+        "tamaño": 80,
+        "concordancia": 80
+      },
+      "semantic_groups": 80
+    }
+  }
+}

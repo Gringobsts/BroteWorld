@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "brain-es"
+version = "0.1.0"
+description = "Aprendizaje experimental de español desde pesos aleatorios"
+requires-python = ">=3.11,<3.14"
+dependencies = ["torch>=2.6,<3", "numpy>=2,<3", "PyYAML>=6,<7"]
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "ruff>=0.12,<1"]
+
+[project.scripts]
+brain = "brain.cli:main"
+brain-world = "brain.world.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/brain"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: entrenamiento real en CPU"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B"]
